@@ -76,6 +76,12 @@
 
   [hidden]{display:none !important;}
 
+  #screen-home, #screen-table{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+
   /* ---------- shared bits ---------- */
 
   .brand{
@@ -91,14 +97,14 @@
     text-align:center;
     color:var(--ink-dim);
     font-size:.85rem;
-    margin:-10px 0 4px;
+    margin:-8px 0 0;
   }
 
   .card{
     background:var(--felt-800);
     border:1px solid var(--line);
     border-radius:18px;
-    padding:20px;
+    padding:24px;
     box-shadow:var(--shadow);
   }
 
@@ -165,7 +171,7 @@
   .btn-ghost:hover:not(:disabled){border-color:var(--gold); color:var(--gold-strong);}
   .btn-sm{padding:9px 12px; font-size:.82rem; width:auto;}
 
-  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tabs{display:flex; gap:8px;}
   .tabs button{
     flex:1;
     background:none;
@@ -182,7 +188,7 @@
   .tabs button.active{color:var(--gold-strong); border-color:var(--gold);}
 
   .error-text{color:var(--wine-strong); font-size:.85rem; min-height:1.1em;}
-  .hint{color:var(--ink-faint); font-size:.78rem; margin-top:-8px;}
+  .hint{color:var(--ink-faint); font-size:.78rem; margin:0; line-height:1.4;}
 
   .spinner{
     width:28px; height:28px; border-radius:50%;
@@ -281,19 +287,19 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin:2px 2px 0;
+    margin:0 2px;
   }
   .section-title h2{font-size:.95rem; margin:0; color:var(--ink-dim); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-family:'Manrope',sans-serif;}
 
-  .roster{display:flex; flex-direction:column; gap:8px;}
+  .roster{display:flex; flex-direction:column; gap:10px;}
   .player-row{
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:14px;
     background:var(--felt-800);
     border:1px solid var(--line);
     border-radius:14px;
-    padding:11px 14px;
+    padding:14px 16px;
   }
   .player-row.is-folded{opacity:.5;}
   .avatar{
@@ -336,7 +342,7 @@
   .dealer-panel{
     border:1px solid var(--gold);
     border-radius:16px;
-    padding:16px;
+    padding:20px;
     background:linear-gradient(180deg, rgba(216,173,63,.06), transparent 40%), var(--felt-800);
   }
   .dealer-title{
@@ -366,11 +372,11 @@
 
   .actionbar{
     position:sticky;
-    bottom:12px;
+    bottom:16px;
     background:var(--felt-800);
     border:1px solid var(--gold);
     border-radius:16px;
-    padding:14px;
+    padding:18px;
     box-shadow:var(--shadow);
   }
   .actionbar-row{display:flex; gap:8px; margin-bottom:10px;}
@@ -519,6 +525,7 @@
       <div class="field">
         <label for="in-join-name">Your name</label>
         <input id="in-join-name" type="text" placeholder="e.g. Priya" maxlength="24">
+        <p class="hint">Already at this table? Use the exact same name to pick up your chips where you left them.</p>
       </div>
       <p class="error-text" id="join-error"></p>
       <button class="btn btn-gold" id="btn-join" type="button">Join table</button>
@@ -825,13 +832,22 @@
     return db.doc('games/'+code).get().then(function(snap){
       if (!snap.exists) { var e = new Error('not_found'); throw e; }
       var data = snap.data();
-      var playerId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
-      return db.doc('games/'+code+'/players/'+playerId).set({
-        name: name, chips: data.buyIn, folded: false, joinedAt: Date.now()
-      }).then(function(){
-        saveSession(code, playerId);
-        safeReplaceState(location.pathname + '?room=' + code);
-        enterTable(code, playerId);
+      return db.doc('games/'+code).collection('players').where('name', '==', name).limit(1).get().then(function(qs){
+        if (!qs.empty){
+          var existingId = qs.docs[0].id;
+          saveSession(code, existingId);
+          safeReplaceState(location.pathname + '?room=' + code);
+          enterTable(code, existingId);
+          return;
+        }
+        var playerId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
+        return db.doc('games/'+code+'/players/'+playerId).set({
+          name: name, chips: data.buyIn, folded: false, joinedAt: Date.now()
+        }).then(function(){
+          saveSession(code, playerId);
+          safeReplaceState(location.pathname + '?room=' + code);
+          enterTable(code, playerId);
+        });
       });
     });
   }
