@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teen Patti Pot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --felt-950:#0a2318;
+    --felt-800:#123526;
+    --felt-700:#1c4634;
+    --felt-600:#265847;
+    --line:#2c5744;
+    --ink:#f2ead2;
+    --ink-dim:#a9c3b4;
+    --ink-faint:#6f9081;
+    --gold:#d8ad3f;
+    --gold-strong:#f0c65f;
+    --wine:#8a2332;
+    --wine-strong:#c1495a;
+    --good:#5fae78;
+    --shadow: 0 12px 32px -12px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box;}
+  ::selection{background:var(--gold);color:#1a1006;}
+
+  html,body{margin:0; padding:0;}
+
+  body{
+    background:
+      radial-gradient(ellipse 120% 70% at 50% -10%, rgba(216,173,63,.08), transparent 60%),
+      radial-gradient(ellipse 90% 60% at 50% 110%, rgba(0,0,0,.5), transparent 60%),
+      repeating-radial-gradient(circle at 0 0, rgba(255,255,255,.02) 0 2px, transparent 2px 34px),
+      var(--felt-950);
+    color:var(--ink);
+    font-family:'Manrope', system-ui, sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Fraunces', Georgia, serif;
+    text-wrap:balance;
+    letter-spacing:.01em;
+  }
+
+  .num{
+    font-family:'Space Mono', ui-monospace, monospace;
+    font-variant-numeric:tabular-nums;
+  }
+
+  button{font-family:inherit;}
+  input{font-family:inherit;}
+
+  a{color:var(--gold-strong);}
+
+  :focus-visible{outline:2px solid var(--gold-strong); outline-offset:2px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    padding:20px 16px 28px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  [hidden]{display:none !important;}
+
+  /* ---------- shared bits ---------- */
+
+  .brand{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  .brand .suit{color:var(--wine-strong); font-size:1.1rem;}
+  .brand h1{font-size:1.5rem; font-weight:700; margin:0; color:var(--gold-strong);}
+  .tagline{
+    text-align:center;
+    color:var(--ink-dim);
+    font-size:.85rem;
+    margin:-10px 0 4px;
+  }
+
+  .card{
+    background:var(--felt-800);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:var(--shadow);
+  }
+
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px;}
+  .field label{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-faint);
+    font-weight:700;
+  }
+  .field input[type=text], .field input[type=number]{
+    background:var(--felt-950);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:1rem;
+    width:100%;
+  }
+  .field input::placeholder{color:var(--ink-faint);}
+  .field input:focus{border-color:var(--gold);}
+
+  .segmented{display:flex; gap:8px; flex-wrap:wrap;}
+  .segmented button{
+    flex:1 1 auto;
+    min-width:70px;
+    background:var(--felt-950);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    border-radius:10px;
+    padding:11px 10px;
+    font-size:.92rem;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .segmented button.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#1a1006;
+  }
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:14px 18px;
+    border-radius:12px;
+    border:1px solid transparent;
+    font-weight:800;
+    font-size:.98rem;
+    cursor:pointer;
+    transition:transform .08s ease, filter .12s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-strong),var(--gold)); color:#1a1006;}
+  .btn-gold:hover:not(:disabled){filter:brightness(1.05);}
+  .btn-wine{background:var(--wine); color:#fbe3e6; border-color:var(--wine-strong);}
+  .btn-wine:hover:not(:disabled){filter:brightness(1.1);}
+  .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink-dim);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--gold); color:var(--gold-strong);}
+  .btn-sm{padding:9px 12px; font-size:.82rem; width:auto;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tabs button{
+    flex:1;
+    background:none;
+    border:none;
+    border-bottom:2px solid var(--line);
+    color:var(--ink-faint);
+    padding:10px 4px;
+    font-weight:800;
+    font-size:.9rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    cursor:pointer;
+  }
+  .tabs button.active{color:var(--gold-strong); border-color:var(--gold);}
+
+  .error-text{color:var(--wine-strong); font-size:.85rem; min-height:1.1em;}
+  .hint{color:var(--ink-faint); font-size:.78rem; margin-top:-8px;}
+
+  .spinner{
+    width:28px; height:28px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--gold);
+    animation:spin .8s linear infinite;
+    margin:40px auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .center-note{
+    text-align:center;
+    color:var(--ink-dim);
+    padding:30px 10px;
+    line-height:1.6;
+  }
+
+  code{
+    background:var(--felt-950);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:1px 6px;
+    font-family:'Space Mono', ui-monospace, monospace;
+    font-size:.85em;
+    color:var(--gold-strong);
+  }
+
+  /* ---------- table screen ---------- */
+
+  .table-header{
+    background:var(--felt-800);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px 18px 16px;
+    box-shadow:var(--shadow);
+  }
+  .table-header-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .table-name{font-size:1.15rem; font-weight:700; margin:0; color:var(--ink);}
+  .round-tag{
+    font-size:.72rem;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    margin-top:2px;
+  }
+  .code-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--felt-950);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 6px 6px 12px;
+    cursor:pointer;
+    color:var(--ink-dim);
+    font-size:.8rem;
+    white-space:nowrap;
+  }
+  .code-chip strong{color:var(--gold-strong); letter-spacing:.08em;}
+  .code-chip .copy-ico{
+    background:var(--felt-700);
+    border-radius:999px;
+    width:22px;height:22px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.75rem;
+  }
+
+  .pot-hero{
+    margin-top:16px;
+    background:radial-gradient(circle at 30% 20%, rgba(216,173,63,.18), transparent 60%), var(--felt-950);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:18px;
+    text-align:center;
+  }
+  .pot-label{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+    color:var(--gold-strong);
+    font-weight:700;
+  }
+  .pot-amount{
+    font-size:2.4rem;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.2;
+  }
+  .pot-amount .suit-sep{color:var(--wine-strong); font-size:1.4rem; margin:0 2px;}
+
+  .section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:2px 2px 0;
+  }
+  .section-title h2{font-size:.95rem; margin:0; color:var(--ink-dim); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-family:'Manrope',sans-serif;}
+
+  .roster{display:flex; flex-direction:column; gap:8px;}
+  .player-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--felt-800);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 14px;
+  }
+  .player-row.is-folded{opacity:.5;}
+  .avatar{
+    width:36px; height:36px; border-radius:50%;
+    background:var(--felt-700);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--gold-strong);
+    flex-shrink:0;
+    font-family:'Fraunces',serif;
+  }
+  .player-meta{flex:1; min-width:0;}
+  .player-name{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    font-weight:700; font-size:.94rem;
+  }
+  .player-name .badge{
+    font-size:.62rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    padding:2px 6px;
+    border-radius:999px;
+    font-weight:800;
+  }
+  .badge-host{background:var(--gold); color:#1a1006;}
+  .badge-you{background:var(--felt-700); color:var(--ink-dim); border:1px solid var(--line);}
+  .badge-folded{background:var(--wine); color:#fbe3e6;}
+  .player-chips{
+    font-size:1.02rem;
+    font-weight:700;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .rebuy-link{
+    background:none; border:none; color:var(--gold-strong);
+    font-size:.74rem; font-weight:700; text-decoration:underline;
+    cursor:pointer; padding:0; margin-top:2px;
+  }
+
+  .dealer-panel{
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:16px;
+    background:linear-gradient(180deg, rgba(216,173,63,.06), transparent 40%), var(--felt-800);
+  }
+  .dealer-title{
+    font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--gold-strong); font-weight:800; margin-bottom:10px;
+  }
+  .winner-picks{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+  .winner-pick{
+    background:var(--felt-950); border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:999px; padding:8px 14px; font-size:.85rem; font-weight:700; cursor:pointer;
+  }
+  .winner-pick.selected{background:var(--gold); border-color:var(--gold); color:#1a1006;}
+  .dealer-actions{display:flex; gap:8px;}
+  .dealer-actions .btn{flex:1;}
+
+  .history-list{display:flex; flex-direction:column; gap:6px;}
+  .history-row{
+    display:flex; justify-content:space-between; gap:8px;
+    font-size:.85rem; color:var(--ink-dim);
+    padding:8px 12px;
+    background:var(--felt-800);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .history-row .num{color:var(--gold-strong); font-weight:700;}
+  .empty-row{color:var(--ink-faint); font-size:.82rem; padding:6px 4px;}
+
+  .actionbar{
+    position:sticky;
+    bottom:12px;
+    background:var(--felt-800);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:14px;
+    box-shadow:var(--shadow);
+  }
+  .actionbar-row{display:flex; gap:8px; margin-bottom:10px;}
+  .actionbar-row input[type=number]{
+    flex:1;
+    background:var(--felt-950);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:10px;
+    padding:12px;
+    font-size:1.05rem;
+    font-weight:700;
+    width:0;
+  }
+  .chip-quick{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+  .chip-btn{
+    background:var(--felt-950); border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:999px; padding:7px 12px; font-size:.8rem; font-weight:700; cursor:pointer;
+  }
+  .chip-btn:hover{border-color:var(--gold);}
+  .actionbar-buttons{display:flex; gap:8px;}
+  .actionbar-buttons .btn{flex:1;}
+  .folded-note{
+    text-align:center; color:var(--ink-faint); font-size:.85rem; padding:6px 0;
+  }
+
+  .footer-links{
+    display:flex; justify-content:center; gap:18px;
+    margin-top:4px;
+  }
+  .footer-links button{
+    background:none; border:none; color:var(--ink-faint);
+    font-size:.78rem; text-decoration:underline; cursor:pointer; padding:4px;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%) translateY(0);
+    background:var(--felt-700);
+    border:1px solid var(--gold);
+    color:var(--ink);
+    padding:11px 18px;
+    border-radius:999px;
+    font-size:.85rem;
+    font-weight:700;
+    box-shadow:var(--shadow);
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    max-width:90vw;
+    text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  .confirm-overlay{
+    position:fixed; inset:0;
+    background:rgba(6,16,11,.72);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:60;
+  }
+  .confirm-box{
+    background:var(--felt-800);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:22px;
+    max-width:360px;
+    width:100%;
+    box-shadow:var(--shadow);
+  }
+  .confirm-box p{color:var(--ink); line-height:1.5; margin:0 0 18px;}
+  .confirm-box .row{display:flex; gap:10px;}
+  .confirm-box .row .btn{flex:1;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="brand">
+    <span class="suit">&#9829;</span><h1>Teen Patti Pot</h1><span class="suit">&#9824;</span>
+  </div>
+
+  <!-- LOADING -->
+  <section id="screen-loading">
+    <div class="spinner" role="status" aria-label="Connecting"></div>
+    <p class="center-note">Connecting to the table…</p>
+  </section>
+
+  <!-- BACKEND NOT CONFIGURED -->
+  <section id="screen-unavailable" hidden>
+    <div class="card">
+      <h2 style="margin-top:0;">Almost there</h2>
+      <p class="center-note" style="padding:0; text-align:left;">
+        This table needs a free Firestore backend connected before anyone can play. If you're the
+        person setting this up, open <code>index.html</code>, fill in <code>FIREBASE_CONFIG</code>
+        near the top of the script with your Firebase project's web config, and redeploy.
+        See <code>README.md</code> in the repo for the 5-minute setup.
+      </p>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="screen-home" hidden>
+    <p class="tagline">Virtual chips only — never real money.</p>
+
+    <div class="tabs">
+      <button id="tab-host" class="active" type="button">Host a table</button>
+      <button id="tab-join" type="button">Join a table</button>
+    </div>
+
+    <div id="pane-host" class="card">
+      <div class="field">
+        <label for="in-table-name">Table name</label>
+        <input id="in-table-name" type="text" placeholder="Friday Night Game" maxlength="40">
+      </div>
+      <div class="field">
+        <label for="in-host-name">Your name</label>
+        <input id="in-host-name" type="text" placeholder="e.g. Rahul" maxlength="24">
+      </div>
+      <div class="field">
+        <label>Starting chips per player</label>
+        <div class="segmented" id="buyin-segmented">
+          <button type="button" data-val="1000" class="active">1,000</button>
+          <button type="button" data-val="2000">2,000</button>
+          <button type="button" data-val="5000">5,000</button>
+          <button type="button" data-val="custom">Custom</button>
+        </div>
+      </div>
+      <div class="field" id="custom-buyin-field" hidden>
+        <label for="in-custom-buyin">Custom chip amount</label>
+        <input id="in-custom-buyin" type="number" min="10" step="10" placeholder="e.g. 3000">
+      </div>
+      <p class="error-text" id="host-error"></p>
+      <button class="btn btn-gold" id="btn-create" type="button">Create table</button>
+    </div>
+
+    <div id="pane-join" class="card" hidden>
+      <div class="field">
+        <label for="in-join-code">Room code</label>
+        <input id="in-join-code" type="text" placeholder="e.g. K7QXR" maxlength="6" style="text-transform:uppercase; letter-spacing:.1em;">
+      </div>
+      <div class="field">
+        <label for="in-join-name">Your name</label>
+        <input id="in-join-name" type="text" placeholder="e.g. Priya" maxlength="24">
+      </div>
+      <p class="error-text" id="join-error"></p>
+      <button class="btn btn-gold" id="btn-join" type="button">Join table</button>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section id="screen-table" hidden>
+    <div class="table-header">
+      <div class="table-header-top">
+        <div>
+          <h2 class="table-name" id="tbl-name">&nbsp;</h2>
+          <div class="round-tag" id="tbl-round">Round 1</div>
+        </div>
+        <div class="code-chip" id="btn-copy-link" role="button" tabindex="0">
+          <span>Code <strong id="tbl-code">—</strong></span>
+          <span class="copy-ico">&#128279;</span>
+        </div>
+      </div>
+      <div class="pot-hero">
+        <div class="pot-label">Pot</div>
+        <div class="pot-amount"><span class="suit-sep">&#9830;</span><span class="num" id="tbl-pot">0</span><span class="suit-sep">&#9827;</span></div>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Players</h2></div>
+    <div class="roster" id="roster"></div>
+
+    <div id="dealer-panel-wrap"></div>
+
+    <div class="section-title"><h2>Round history</h2></div>
+    <div class="history-list" id="history-list"></div>
+
+    <div class="actionbar" id="actionbar">
+      <div class="actionbar-row">
+        <input type="number" id="in-bet-amount" min="1" step="1" placeholder="Bet amount">
+      </div>
+      <div class="chip-quick" id="chip-quick"></div>
+      <div class="actionbar-buttons">
+        <button class="btn btn-ghost" id="btn-fold" type="button">Fold</button>
+        <button class="btn btn-gold" id="btn-bet" type="button">Add to pot</button>
+      </div>
+      <p class="error-text" id="bet-error" style="margin:8px 0 0;"></p>
+      <p class="folded-note" id="folded-note" hidden>You've folded this round — sit tight for the next deal.</p>
+    </div>
+
+    <div class="footer-links">
+      <button id="btn-leave" type="button">Leave table</button>
+      <button id="btn-end" type="button" hidden>End table for everyone</button>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="confirm-root"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // 1. Paste your Firebase web app config here (see README.md).
+  //    This is a public client config, not a secret — Firestore
+  //    security rules (also in README.md) control who can read
+  //    and write, not this object.
+  // ============================================================
+  var FIREBASE_CONFIG = {
+    apiKey: "REPLACE_WITH_YOUR_API_KEY",
+    authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
+    projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+    storageBucket: "REPLACE_WITH_YOUR_PROJECT.appspot.com",
+    messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
+    appId: "REPLACE_WITH_YOUR_APP_ID"
+  };
+
+  var CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var money = new Intl.NumberFormat('en-IN');
+
+  var db = null;
+  var gameRef = null;
+  var unsubs = [];
+
+  var state = {
+    roomCode: null,
+    myPlayerId: null,
+    game: null,
+    players: [],
+    bets: [],
+    rounds: [],
+    selectedWinnerId: null
+  };
+
+  // ---------- small utils ----------
+
+  function $(id){ return document.getElementById(id); }
+  function show(id){ $(id).hidden = false; }
+  function hide(id){ $(id).hidden = true; }
+
+  function toast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+  }
+
+  function genCode(){
+    var s = '';
+    for (var i=0;i<5;i++) s += CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];
+    return s;
+  }
+
+  function niceRound(n){
+    if (n < 10) return Math.max(1, Math.round(n));
+    if (n < 100) return Math.round(n/5)*5;
+    if (n < 1000) return Math.round(n/10)*10;
+    return Math.round(n/50)*50;
+  }
+
+  function chipDenoms(buyIn){
+    var ratios = [0.01, 0.05, 0.1, 0.25];
+    var seen = {};
+    var out = [];
+    ratios.forEach(function(r){
+      var v = niceRound(buyIn*r);
+      if (v > 0 && !seen[v]) { seen[v]=true; out.push(v); }
+    });
+    out.sort(function(a,b){return a-b;});
+    return out;
+  }
+
+  function saveSession(roomCode, playerId){
+    try {
+      localStorage.setItem('tp_session', JSON.stringify({roomCode:roomCode, playerId:playerId}));
+    } catch(e){}
+  }
+  function loadSession(){
+    try {
+      var raw = localStorage.getItem('tp_session');
+      return raw ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+  function clearSession(){
+    try { localStorage.removeItem('tp_session'); } catch(e){}
+  }
+
+  function safeReplaceState(url){
+    try { history.replaceState(null, '', url); } catch(e){}
+  }
+
+  function confirmDialog(message, confirmLabel, danger){
+    return new Promise(function(resolve){
+      var root = $('confirm-root');
+      var overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML =
+        '<div class="confirm-box">' +
+          '<p>' + message + '</p>' +
+          '<div class="row">' +
+            '<button class="btn btn-ghost" data-a="cancel" type="button">Cancel</button>' +
+            '<button class="btn ' + (danger ? 'btn-wine' : 'btn-gold') + '" data-a="ok" type="button">' + confirmLabel + '</button>' +
+          '</div>' +
+        '</div>';
+      root.appendChild(overlay);
+      overlay.addEventListener('click', function(e){
+        var a = e.target.getAttribute && e.target.getAttribute('data-a');
+        if (a === 'ok'){ root.removeChild(overlay); resolve(true); }
+        else if (a === 'cancel' || e.target === overlay){ root.removeChild(overlay); resolve(false); }
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function initials(name){
+    var parts = String(name||'?').trim().split(/\s+/);
+    var s = parts[0] ? parts[0][0] : '?';
+    if (parts.length>1) s += parts[1][0];
+    return s.toUpperCase();
+  }
+
+  // ---------- screen switching ----------
+
+  function goto(screen){
+    ['screen-loading','screen-unavailable','screen-home','screen-table'].forEach(function(id){
+      $(id).hidden = (id !== screen);
+    });
+    if (screen === 'screen-home'){
+      $('btn-create').disabled = false;
+      $('btn-join').disabled = false;
+    }
+  }
+
+  // ---------- home screen wiring ----------
+
+  var selectedBuyin = 1000;
+
+  function wireHome(){
+    $('tab-host').addEventListener('click', function(){
+      $('tab-host').classList.add('active');
+      $('tab-join').classList.remove('active');
+      show('pane-host'); hide('pane-join');
+    });
+    $('tab-join').addEventListener('click', function(){
+      $('tab-join').classList.add('active');
+      $('tab-host').classList.remove('active');
+      show('pane-join'); hide('pane-host');
+    });
+
+    var seg = $('buyin-segmented');
+    seg.querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        seg.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        if (btn.getAttribute('data-val') === 'custom'){
+          show('custom-buyin-field');
+          selectedBuyin = null;
+        } else {
+          hide('custom-buyin-field');
+          selectedBuyin = parseInt(btn.getAttribute('data-val'), 10);
+        }
+      });
+    });
+
+    $('btn-create').addEventListener('click', onCreateTable);
+    $('btn-join').addEventListener('click', onJoinTable);
+
+    var params = new URLSearchParams(location.search);
+    var roomParam = params.get('room');
+    if (roomParam){
+      $('in-join-code').value = roomParam.toUpperCase();
+      $('tab-join').click();
+    }
+  }
+
+  function onCreateTable(){
+    $('host-error').textContent = '';
+    var name = $('in-table-name').value.trim() || 'Friday Night Game';
+    var hostName = $('in-host-name').value.trim();
+    var buyIn = selectedBuyin;
+    if (selectedBuyin === null){
+      buyIn = parseInt($('in-custom-buyin').value, 10);
+    }
+    if (!hostName){ $('host-error').textContent = 'Enter your name to create the table.'; return; }
+    if (!buyIn || buyIn <= 0){ $('host-error').textContent = 'Enter a valid starting chip amount.'; return; }
+
+    $('btn-create').disabled = true;
+    createGame(name, buyIn, hostName).catch(function(e){
+      $('host-error').textContent = 'Could not create the table. Try again.';
+      $('btn-create').disabled = false;
+    });
+  }
+
+  function onJoinTable(){
+    $('join-error').textContent = '';
+    var code = $('in-join-code').value.trim().toUpperCase();
+    var name = $('in-join-name').value.trim();
+    if (!code){ $('join-error').textContent = 'Enter the room code your host shared.'; return; }
+    if (!name){ $('join-error').textContent = 'Enter your name to join.'; return; }
+
+    $('btn-join').disabled = true;
+    joinGame(code, name).catch(function(e){
+      $('join-error').textContent = e && e.message === 'not_found'
+        ? "Couldn't find that table. Check the code and try again."
+        : 'Could not join the table. Try again.';
+      $('btn-join').disabled = false;
+    });
+  }
+
+  // ---------- game creation / joining ----------
+
+  function createGame(name, buyIn, hostName){
+    return (function tryCode(attemptsLeft){
+      var code = genCode();
+      return db.doc('games/'+code).get().then(function(snap){
+        if (snap.exists){
+          if (attemptsLeft <= 0) throw new Error('exhausted');
+          return tryCode(attemptsLeft-1);
+        }
+        var playerId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
+        return db.doc('games/'+code).set({
+          name: name, buyIn: buyIn, hostId: playerId, round: 1, createdAt: Date.now()
+        }).then(function(){
+          return db.doc('games/'+code+'/players/'+playerId).set({
+            name: hostName, chips: buyIn, folded: false, joinedAt: Date.now()
+          });
+        }).then(function(){
+          saveSession(code, playerId);
+          safeReplaceState(location.pathname + '?room=' + code);
+          enterTable(code, playerId);
+        });
+      });
+    })(5);
+  }
+
+  function joinGame(code, name){
+    return db.doc('games/'+code).get().then(function(snap){
+      if (!snap.exists) { var e = new Error('not_found'); throw e; }
+      var data = snap.data();
+      var playerId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
+      return db.doc('games/'+code+'/players/'+playerId).set({
+        name: name, chips: data.buyIn, folded: false, joinedAt: Date.now()
+      }).then(function(){
+        saveSession(code, playerId);
+        safeReplaceState(location.pathname + '?room=' + code);
+        enterTable(code, playerId);
+      });
+    });
+  }
+
+  // ---------- table screen ----------
+
+  function enterTable(code, playerId){
+    unsubs.forEach(function(u){ u(); });
+    unsubs = [];
+
+    state.roomCode = code;
+    state.myPlayerId = playerId;
+    state.selectedWinnerId = null;
+
+    gameRef = db.doc('games/'+code);
+
+    goto('screen-table');
+    wireTableStatic();
+
+    unsubs.push(gameRef.onSnapshot(function(snap){
+      if (!snap.exists){
+        toast('This table was ended.');
+        clearSession();
+        goto('screen-home');
+        return;
+      }
+      state.game = snap.data();
+      renderDynamic();
+    }, function(){ /* terminal error, ignore: UI just stops updating */ }));
+
+    unsubs.push(gameRef.collection('players').orderBy('joinedAt','asc').onSnapshot(function(qs){
+      state.players = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderDynamic();
+    }));
+
+    unsubs.push(gameRef.collection('bets').orderBy('ts','asc').onSnapshot(function(qs){
+      state.bets = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderDynamic();
+    }));
+
+    unsubs.push(gameRef.collection('rounds').orderBy('ts','desc').limit(20).onSnapshot(function(qs){
+      state.rounds = qs.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderDynamic();
+    }));
+  }
+
+  function wireTableStatic(){
+    $('btn-copy-link').onclick = function(){
+      var url = location.origin + location.pathname + '?room=' + state.roomCode;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ toast('Link copied — send it to your friends'); })
+          .catch(function(){ toast('Room code: ' + state.roomCode); });
+      } else {
+        toast('Room code: ' + state.roomCode);
+      }
+    };
+
+    $('btn-bet').onclick = onPlaceBet;
+    $('btn-fold').onclick = onFold;
+    $('btn-leave').onclick = onLeaveTable;
+    $('btn-end').onclick = onEndTable;
+  }
+
+  function me(){
+    return state.players.find(function(p){ return p.id === state.myPlayerId; });
+  }
+  function isHost(){
+    return state.game && state.game.hostId === state.myPlayerId;
+  }
+  function currentPot(){
+    if (!state.game) return 0;
+    var round = state.game.round;
+    return state.bets.filter(function(b){ return b.round === round; })
+      .reduce(function(s,b){ return s + b.amount; }, 0);
+  }
+
+  function renderDynamic(){
+    if (!state.game) return;
+    var g = state.game;
+
+    $('tbl-name').textContent = g.name;
+    $('tbl-round').textContent = 'Round ' + g.round;
+    $('tbl-code').textContent = state.roomCode;
+    $('tbl-pot').textContent = money.format(currentPot());
+
+    $('btn-end').hidden = !isHost();
+
+    renderRoster();
+    renderDealerPanel();
+    renderHistory();
+    renderChipQuick();
+    updateActionBarState();
+  }
+
+  function renderRoster(){
+    var host = state.game.hostId;
+    var html = state.players.map(function(p){
+      var badges = '';
+      if (p.id === host) badges += '<span class="badge badge-host">Host</span>';
+      if (p.id === state.myPlayerId) badges += '<span class="badge badge-you">You</span>';
+      if (p.folded) badges += '<span class="badge badge-folded">Folded</span>';
+      var rebuy = (p.id === state.myPlayerId && p.chips <= 0)
+        ? '<button class="rebuy-link" data-rebuy="1" type="button">Rebuy +' + money.format(state.game.buyIn) + '</button>'
+        : '';
+      return (
+        '<div class="player-row' + (p.folded ? ' is-folded' : '') + '">' +
+          '<div class="avatar">' + escapeHtml(initials(p.name)) + '</div>' +
+          '<div class="player-meta">' +
+            '<div class="player-name">' + escapeHtml(p.name) + badges + '</div>' +
+            rebuy +
+          '</div>' +
+          '<div class="player-chips num">' + money.format(p.chips) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+    $('roster').innerHTML = html || '<p class="empty-row">No players yet.</p>';
+
+    var rebuyBtn = $('roster').querySelector('[data-rebuy]');
+    if (rebuyBtn) rebuyBtn.onclick = onRebuy;
+  }
+
+  function renderDealerPanel(){
+    var wrap = $('dealer-panel-wrap');
+    if (!isHost()){ wrap.innerHTML = ''; return; }
+
+    var active = state.players.filter(function(p){ return !p.folded; });
+    var pot = currentPot();
+
+    if (state.selectedWinnerId && !active.some(function(p){ return p.id === state.selectedWinnerId; })){
+      state.selectedWinnerId = null;
+    }
+
+    var picks = active.map(function(p){
+      var sel = p.id === state.selectedWinnerId;
+      return '<button type="button" class="winner-pick' + (sel ? ' selected' : '') + '" data-pick="' + p.id + '">' + escapeHtml(p.name) + '</button>';
+    }).join('');
+
+    wrap.innerHTML =
+      '<div class="dealer-panel">' +
+        '<div class="dealer-title">Dealer &middot; pick the winner</div>' +
+        '<div class="winner-picks">' + (picks || '<span class="empty-row">Everyone has folded.</span>') + '</div>' +
+        '<div class="dealer-actions">' +
+          '<button class="btn btn-ghost btn-sm" id="btn-void" type="button">Void round (refund)</button>' +
+          '<button class="btn btn-gold btn-sm" id="btn-award" type="button">Award pot</button>' +
+        '</div>' +
+      '</div>';
+
+    wrap.querySelectorAll('[data-pick]').forEach(function(btn){
+      btn.onclick = function(){
+        state.selectedWinnerId = btn.getAttribute('data-pick');
+        renderDealerPanel();
+      };
+    });
+    $('btn-void').onclick = onVoidRound;
+    $('btn-award').onclick = onAwardPot;
+  }
+
+  function renderHistory(){
+    var html = state.rounds.map(function(r){
+      return '<div class="history-row"><span>Round ' + r.round + ' &middot; ' + escapeHtml(r.winnerName) + '</span><span class="num">+' + money.format(r.amount) + '</span></div>';
+    }).join('');
+    $('history-list').innerHTML = html || '<p class="empty-row">No rounds played yet.</p>';
+  }
+
+  var lastChipDenomKey = null;
+  function renderChipQuick(){
+    var key = state.game.buyIn;
+    if (key === lastChipDenomKey) return;
+    lastChipDenomKey = key;
+    var denoms = chipDenoms(state.game.buyIn);
+    $('chip-quick').innerHTML = denoms.map(function(v){
+      return '<button type="button" class="chip-btn" data-chip="' + v + '">+' + money.format(v) + '</button>';
+    }).join('');
+    $('chip-quick').querySelectorAll('[data-chip]').forEach(function(btn){
+      btn.onclick = function(){ $('in-bet-amount').value = btn.getAttribute('data-chip'); };
+    });
+  }
+
+  function updateActionBarState(){
+    var m = me();
+    var folded = !!(m && m.folded);
+    $('btn-bet').disabled = folded;
+    $('btn-fold').disabled = folded;
+    $('in-bet-amount').disabled = folded;
+    $('folded-note').hidden = !folded;
+  }
+
+  function onPlaceBet(){
+    $('bet-error').textContent = '';
+    var m = me();
+    if (!m || m.folded) return;
+    var amount = parseInt($('in-bet-amount').value, 10);
+    if (!amount || amount <= 0){ $('bet-error').textContent = 'Enter an amount to bet.'; return; }
+    if (amount > m.chips){ $('bet-error').textContent = "That's more chips than you have."; return; }
+
+    $('btn-bet').disabled = true;
+    Promise.all([
+      gameRef.collection('players').doc(m.id).update({ chips: m.chips - amount }),
+      gameRef.collection('bets').add({ playerId: m.id, name: m.name, amount: amount, round: state.game.round, ts: Date.now() })
+    ]).then(function(){
+      $('in-bet-amount').value = '';
+    }).catch(function(){
+      $('bet-error').textContent = 'Could not place that bet. Try again.';
+    }).finally(function(){
+      $('btn-bet').disabled = false;
+    });
+  }
+
+  function onFold(){
+    var m = me();
+    if (!m) return;
+    gameRef.collection('players').doc(m.id).update({ folded: true }).catch(function(){
+      toast('Could not fold — try again.');
+    });
+  }
+
+  function onRebuy(){
+    var m = me();
+    if (!m) return;
+    gameRef.collection('players').doc(m.id).update({ chips: state.game.buyIn }).then(function(){
+      toast('Chips topped up.');
+    }).catch(function(){ toast('Could not rebuy — try again.'); });
+  }
+
+  function onAwardPot(){
+    if (!isHost()) return;
+    var pot = currentPot();
+    if (pot <= 0){ toast('No bets placed this round yet.'); return; }
+    var winner = state.players.find(function(p){ return p.id === state.selectedWinnerId; });
+    if (!winner){ toast('Pick a winner first.'); return; }
+
+    confirmDialog('Award <strong class="num">' + money.format(pot) + '</strong> chips to <strong>' + escapeHtml(winner.name) + '</strong>?', 'Award pot').then(function(ok){
+      if (!ok) return;
+      var round = state.game.round;
+      Promise.all([
+        gameRef.collection('players').doc(winner.id).update({ chips: winner.chips + pot }),
+        gameRef.collection('rounds').add({ round: round, winnerId: winner.id, winnerName: winner.name, amount: pot, ts: Date.now() })
+      ]).then(function(){
+        return Promise.all(state.players.map(function(p){
+          return gameRef.collection('players').doc(p.id).update({ folded: false });
+        }));
+      }).then(function(){
+        return gameRef.update({ round: round + 1 });
+      }).then(function(){
+        state.selectedWinnerId = null;
+        renderDealerPanel();
+        toast('Pot awarded to ' + winner.name);
+      }).catch(function(){
+        toast('Something went wrong awarding the pot.');
+      });
+    });
+  }
+
+  function onVoidRound(){
+    if (!isHost()) return;
+    var round = state.game.round;
+    var pot = currentPot();
+    if (pot <= 0){ toast('No bets to refund this round.'); return; }
+
+    confirmDialog('Refund all bets from round ' + round + ' back to their players?', 'Void round').then(function(ok){
+      if (!ok) return;
+      var refunds = {};
+      state.bets.filter(function(b){ return b.round === round; }).forEach(function(b){
+        refunds[b.playerId] = (refunds[b.playerId] || 0) + b.amount;
+      });
+      Promise.all(Object.keys(refunds).map(function(pid){
+        var p = state.players.find(function(pp){ return pp.id === pid; });
+        if (!p) return Promise.resolve();
+        return gameRef.collection('players').doc(pid).update({ chips: p.chips + refunds[pid] });
+      })).then(function(){
+        return Promise.all(state.players.map(function(p){
+          return gameRef.collection('players').doc(p.id).update({ folded: false });
+        }));
+      }).then(function(){
+        return gameRef.update({ round: round + 1 });
+      }).then(function(){
+        state.selectedWinnerId = null;
+        renderDealerPanel();
+        toast('Round voided — chips refunded.');
+      }).catch(function(){
+        toast('Something went wrong voiding the round.');
+      });
+    });
+  }
+
+  function onLeaveTable(){
+    confirmDialog('Leave this table? Your chip balance stays saved if you rejoin with the same code.', 'Leave').then(function(ok){
+      if (!ok) return;
+      unsubs.forEach(function(u){ u(); });
+      unsubs = [];
+      clearSession();
+      safeReplaceState(location.pathname);
+      goto('screen-home');
+    });
+  }
+
+  function onEndTable(){
+    confirmDialog('End this table for everyone and clear all its data? This cannot be undone.', 'End table', true).then(function(ok){
+      if (!ok) return;
+      var code = state.roomCode;
+      var ref = db.doc('games/'+code);
+      Promise.all([
+        ref.collection('players').get(),
+        ref.collection('bets').get(),
+        ref.collection('rounds').get()
+      ]).then(function(results){
+        var deletes = [];
+        results.forEach(function(qs, i){
+          var col = [ref.collection('players'), ref.collection('bets'), ref.collection('rounds')][i];
+          qs.docs.forEach(function(d){ deletes.push(col.doc(d.id).delete()); });
+        });
+        return Promise.all(deletes);
+      }).then(function(){
+        return ref.delete();
+      }).then(function(){
+        unsubs.forEach(function(u){ u(); });
+        unsubs = [];
+        clearSession();
+        safeReplaceState(location.pathname);
+        goto('screen-home');
+        toast('Table ended.');
+      }).catch(function(){
+        toast('Could not fully end the table — try again.');
+      });
+    });
+  }
+
+  // ---------- boot ----------
+
+  function boot(){
+    wireHome();
+
+    var configured = FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey &&
+      FIREBASE_CONFIG.apiKey.indexOf('REPLACE_WITH') !== 0;
+
+    if (!configured || !window.firebase){
+      goto('screen-unavailable');
+      return;
+    }
+
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+    } catch(e){
+      goto('screen-unavailable');
+      return;
+    }
+
+    var session = loadSession();
+    if (session && session.roomCode && session.playerId){
+      db.doc('games/'+session.roomCode).get().then(function(snap){
+        if (snap.exists){
+          enterTable(session.roomCode, session.playerId);
+        } else {
+          clearSession();
+          goto('screen-home');
+        }
+      }).catch(function(){
+        goto('screen-home');
+      });
+    } else {
+      goto('screen-home');
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
