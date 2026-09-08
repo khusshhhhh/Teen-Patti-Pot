@@ -596,19 +596,61 @@
   .confirm-box h3{margin:0 0 14px; font-size:1.1rem;}
   .qr-wrap{display:flex; justify-content:center; padding:14px; background:#fff; border-radius:12px; margin-bottom:14px;}
 
-  .chip-fly{
+  .coin{
     position:fixed;
     z-index:70;
-    font-family:'Space Mono', monospace;
-    font-weight:700;
-    color:var(--gold-strong);
+    width:24px; height:24px;
+    margin:-12px 0 0 -12px;
+    border-radius:50%;
     pointer-events:none;
-    font-size:1.1rem;
-    animation:chipfly 0.7s ease-out forwards;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 0 38%, var(--gold) 38% 46%, transparent 46%),
+      repeating-conic-gradient(var(--gold-strong) 0deg 22.5deg, var(--wine-strong) 22.5deg 45deg);
+    box-shadow:
+      0 3px 7px rgba(0,0,0,.45),
+      inset 0 0 0 2px var(--felt-950);
+    animation-name:coin-toss;
+    animation-timing-function:cubic-bezier(.33,.6,.4,1);
+    animation-fill-mode:forwards;
   }
-  @keyframes chipfly{
-    0%{opacity:1; transform:translate(0,0) scale(1);}
-    100%{opacity:0; transform:translate(var(--fx,0px), var(--fy,-120px)) scale(.6);}
+  @keyframes coin-toss{
+    0%{ transform:translate(0,0) scale(.7) rotateY(0deg); opacity:1; }
+    38%{ transform:translate(var(--mx,0px), var(--my,-70px)) scale(1.08) rotateY(540deg); opacity:1; }
+    80%{ transform:translate(var(--tx,0px), var(--ty,0px)) scale(.92) rotateY(1080deg); opacity:1; }
+    100%{ transform:translate(var(--tx,0px), var(--ty,0px)) scale(.55) rotateY(1080deg); opacity:0; }
+  }
+
+  .coin-amount{
+    position:fixed;
+    z-index:71;
+    font-family:'Space Mono', monospace;
+    font-weight:800;
+    font-size:1.15rem;
+    pointer-events:none;
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+    animation:coin-amount-pop .9s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  .coin-amount.pos{color:var(--good);}
+  .coin-amount.neg{color:var(--gold-strong);}
+  @keyframes coin-amount-pop{
+    0%{ transform:translate(-50%,0) scale(.5); opacity:0; }
+    25%{ transform:translate(-50%,-8px) scale(1.15); opacity:1; }
+    45%{ transform:translate(-50%,-10px) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-46px) scale(1); opacity:0; }
+  }
+
+  .pot-hero.pulse{ animation:pot-pulse .55s ease; }
+  @keyframes pot-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(216,173,63,.5); }
+    35%{ transform:scale(1.055); box-shadow:0 0 0 10px rgba(216,173,63,0); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(216,173,63,0); }
+  }
+
+  .player-chips.pulse{ animation:chip-pulse .5s ease; }
+  @keyframes chip-pulse{
+    0%{ color:var(--ink); }
+    35%{ transform:scale(1.12); color:var(--gold-strong); }
+    100%{ transform:scale(1); color:var(--ink); }
   }
 
   .confetti-piece{
@@ -1025,19 +1067,78 @@
     }
   }
 
-  function flyChip(fromEl, toEl, amount){
+  function coinCountFor(amount, unit){
+    var u = unit && unit > 0 ? unit : Math.max(1, Math.round(amount/4));
+    var n = Math.round(amount / u);
+    return Math.max(3, Math.min(9, n || 3));
+  }
+
+  function flyCoins(fromEl, toEl, amount, opts){
     if (!fromEl || !toEl) return;
+    opts = opts || {};
     var fr = fromEl.getBoundingClientRect();
     var tr = toEl.getBoundingClientRect();
-    var el = document.createElement('div');
-    el.className = 'chip-fly';
-    el.textContent = '+' + money.format(amount);
-    el.style.left = (fr.left + fr.width/2) + 'px';
-    el.style.top = (fr.top) + 'px';
-    el.style.setProperty('--fx', (tr.left - fr.left) + 'px');
-    el.style.setProperty('--fy', (tr.top - fr.top) + 'px');
-    document.body.appendChild(el);
-    setTimeout(function(){ el.remove(); }, 750);
+    var startX = fr.left + fr.width/2, startY = fr.top + fr.height/2;
+    var endX = tr.left + tr.width/2, endY = tr.top + tr.height/2;
+    var n = opts.count || coinCountFor(Math.abs(amount), opts.unit);
+    var dx = endX - startX, dy = endY - startY;
+
+    for (var i=0;i<n;i++){
+      (function(i){
+        var coin = document.createElement('div');
+        coin.className = 'coin';
+        var jx = (Math.random()-0.5)*30;
+        var jy = (Math.random()-0.5)*14;
+        var arcLift = 50 + Math.random()*40;
+        var dur = 0.62 + Math.random()*0.28;
+        coin.style.left = startX + 'px';
+        coin.style.top = startY + 'px';
+        coin.style.setProperty('--tx', (dx+jx) + 'px');
+        coin.style.setProperty('--ty', (dy+jy) + 'px');
+        coin.style.setProperty('--mx', (dx*0.45) + 'px');
+        coin.style.setProperty('--my', (dy*0.45 - arcLift) + 'px');
+        coin.style.animationDuration = dur + 's';
+        coin.style.animationDelay = (i*55) + 'ms';
+        document.body.appendChild(coin);
+        setTimeout(function(){ coin.remove(); }, dur*1000 + i*55 + 120);
+      })(i);
+    }
+
+    if (opts.label !== false){
+      var label = document.createElement('div');
+      label.className = 'coin-amount ' + (amount >= 0 ? 'pos' : 'neg');
+      label.textContent = (amount >= 0 ? '+' : '−') + money.format(Math.abs(amount));
+      label.style.left = endX + 'px';
+      label.style.top = (endY - 14) + 'px';
+      document.body.appendChild(label);
+      setTimeout(function(){ label.remove(); }, 950);
+    }
+  }
+
+  function pulseElement(el, cls){
+    if (!el) return;
+    cls = cls || 'pulse';
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(function(){ el.classList.remove(cls); }, 600);
+  }
+
+  function animateNumber(el, toVal){
+    if (!el) return;
+    var fromVal = parseInt(String(el.textContent).replace(/[^0-9-]/g,''), 10);
+    if (isNaN(fromVal) || fromVal === toVal){ el.textContent = money.format(toVal); return; }
+    var start = null;
+    var dur = 550;
+    function step(ts){
+      if (start === null) start = ts;
+      var p = Math.min(1, (ts-start)/dur);
+      var eased = 1 - Math.pow(1-p, 3);
+      el.textContent = money.format(Math.round(fromVal + (toVal-fromVal)*eased));
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = money.format(toVal);
+    }
+    requestAnimationFrame(step);
   }
 
   // ---------- cards & hand ranking ----------
@@ -1317,6 +1418,8 @@
     state.selectedWinnerId = null;
     state.revealed = false;
     state.selfEnding = false;
+    prevPot = null;
+    prevChipsById = {};
 
     gameRef = db.doc('games/'+code);
 
@@ -1449,6 +1552,9 @@
   }
 
   var lastRenderedRound = null;
+  var prevPot = null;
+  var prevChipsById = {};
+
   function renderDynamic(){
     if (!state.game) return;
     var g = state.game;
@@ -1461,7 +1567,15 @@
     $('tbl-name').textContent = g.name;
     $('tbl-round').textContent = 'Round ' + g.round;
     $('tbl-code').textContent = state.roomCode;
-    $('tbl-pot').textContent = money.format(currentPot());
+
+    var pot = currentPot();
+    if (prevPot !== null && prevPot !== pot){
+      animateNumber($('tbl-pot'), pot);
+    } else {
+      $('tbl-pot').textContent = money.format(pot);
+    }
+    prevPot = pot;
+
     $('tbl-stake').textContent = g.roundStarted ? ('Stake ' + money.format(g.stake||0) + (g.bootAmount ? ' · Boot ' + money.format(g.bootAmount) : '')) : (g.bootAmount ? 'Boot ' + money.format(g.bootAmount) + ' per round' : 'No boot set');
 
     $('btn-end').hidden = !isHost();
@@ -1535,6 +1649,17 @@
       );
     }).join('');
     $('roster').innerHTML = html || '<p class="empty-row">No players yet.</p>';
+
+    state.players.forEach(function(p){
+      var chipEl = $('chip-target-' + p.id);
+      var prev = prevChipsById[p.id];
+      if (chipEl && prev !== undefined && prev !== p.chips){
+        chipEl.textContent = money.format(prev);
+        animateNumber(chipEl, p.chips);
+        pulseElement(chipEl);
+      }
+      prevChipsById[p.id] = p.chips;
+    });
 
     var rebuyBtn = $('roster').querySelector('[data-rebuy]');
     if (rebuyBtn) rebuyBtn.onclick = onRebuy;
@@ -1677,7 +1802,8 @@
       gameRef.collection('bets').add({ playerId: m.id, name: m.name, amount: amount, round: g.round, ts: Date.now() }),
       gameRef.update({ turnPlayerId: nextTurn, stake: newStake })
     ]).then(function(){
-      flyChip(betBtn, potEl, amount);
+      flyCoins(betBtn, potEl, amount, {unit: g.stake});
+      pulseElement(potEl);
       sfxBet();
       $('in-bet-amount').value = '';
     }).catch(function(){
@@ -1751,6 +1877,13 @@
     confirmDialog('Award <strong class="num">' + money.format(pot) + '</strong> chips to <strong>' + escapeHtml(winner.name) + '</strong>?', 'Award pot').then(function(ok){
       if (!ok) return;
       var round = state.game.round;
+      var potEl = document.querySelector('.pot-hero');
+      var winnerChipEl = $('chip-target-' + winner.id);
+
+      flyCoins(potEl, winnerChipEl || potEl, pot, {unit: state.game.stake, count: coinCountFor(pot, state.game.stake) + 2});
+      pulseElement(potEl);
+      sfxAward();
+
       Promise.all([
         gameRef.collection('players').doc(winner.id).update({ chips: winner.chips + pot }),
         gameRef.collection('rounds').add({ round: round, winnerId: winner.id, winnerName: winner.name, amount: pot, ts: Date.now() })
@@ -1763,8 +1896,8 @@
       }).then(function(){
         state.selectedWinnerId = null;
         renderDealerPanel();
-        sfxAward();
-        fireConfetti();
+        if (winnerChipEl) pulseElement(winnerChipEl, 'pulse');
+        setTimeout(fireConfetti, 380);
         toast('Pot awarded to ' + winner.name);
       }).catch(function(){
         toast('Something went wrong awarding the pot.');
@@ -1784,6 +1917,14 @@
       state.bets.filter(function(b){ return b.round === round; }).forEach(function(b){
         refunds[b.playerId] = (refunds[b.playerId] || 0) + b.amount;
       });
+
+      var potEl = document.querySelector('.pot-hero');
+      Object.keys(refunds).forEach(function(pid){
+        var chipEl = $('chip-target-' + pid);
+        if (chipEl) flyCoins(potEl, chipEl, refunds[pid], {label:false, unit: state.game.stake, count: 3});
+      });
+      pulseElement(potEl);
+
       Promise.all(Object.keys(refunds).map(function(pid){
         var p = state.players.find(function(pp){ return pp.id === pid; });
         if (!p) return Promise.resolve();
