@@ -9,20 +9,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
-    --felt-950:#0a2318;
-    --felt-800:#123526;
-    --felt-700:#1c4634;
-    --felt-600:#265847;
-    --line:#2c5744;
-    --ink:#f2ead2;
-    --ink-dim:#a9c3b4;
-    --ink-faint:#6f9081;
+    --felt-950:#180a0c;
+    --felt-800:#2c1215;
+    --felt-700:#3e181d;
+    --felt-600:#4e1f25;
+    --line:#5c262c;
+    --ink:#f6ead9;
+    --ink-dim:#cba79d;
+    --ink-faint:#93665f;
     --gold:#d8ad3f;
     --gold-strong:#f0c65f;
-    --wine:#8a2332;
-    --wine-strong:#c1495a;
+    --wine:#a52e3d;
+    --wine-strong:#d1495a;
     --good:#5fae78;
-    --shadow: 0 12px 32px -12px rgba(0,0,0,.55);
+    --shadow: 0 12px 32px -12px rgba(0,0,0,.6);
   }
 
   :root[data-theme="light"]{
@@ -498,6 +498,21 @@
   .history-row .num{color:var(--gold-strong); font-weight:700;}
   .empty-row{color:var(--ink-faint); font-size:.82rem; padding:6px 4px;}
 
+  .activity-feed{
+    display:flex; flex-direction:column; gap:6px;
+    background:var(--felt-800);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .activity-row{
+    display:flex; align-items:baseline; gap:8px;
+    font-size:.85rem; color:var(--ink-dim);
+  }
+  .activity-row:first-child{ color:var(--ink); font-weight:700; }
+  .activity-row .num{color:var(--gold-strong); font-weight:700;}
+  .activity-row.is-fold .num{color:var(--wine-strong);}
+
   .turn-status{
     text-align:center;
     font-size:.85rem;
@@ -806,6 +821,11 @@
 
     <p class="turn-status" id="turn-status"></p>
 
+    <div id="activity-feed-wrap" hidden>
+      <div class="section-title"><h2>Latest action</h2></div>
+      <div class="activity-feed" id="activity-feed"></div>
+    </div>
+
     <div class="section-title"><h2>Players</h2></div>
     <div class="roster" id="roster"></div>
 
@@ -883,6 +903,7 @@
     bets: [],
     rounds: [],
     selectedWinnerId: null,
+    starterId: null,
     deviceId: null,
     soundOn: true,
     revealed: false,
@@ -1581,6 +1602,7 @@
     $('btn-end').hidden = !isHost();
 
     renderTurnStatus();
+    renderActivityFeed();
     renderRoster();
     renderDealerPanel();
     renderLeaderboard();
@@ -1602,6 +1624,29 @@
     var mine = g.turnPlayerId === state.myPlayerId;
     el.textContent = mine ? "It's your turn" : "Waiting for " + turnPlayer.name + " to act";
     el.classList.toggle('mine', mine);
+  }
+
+  function renderActivityFeed(){
+    var round = state.game.round;
+    var entries = state.bets.filter(function(b){ return b.round === round; });
+    if (!entries.length){ hide('activity-feed-wrap'); return; }
+    show('activity-feed-wrap');
+
+    var avatarById = {};
+    state.players.forEach(function(p){ avatarById[p.id] = p.avatar || ''; });
+
+    var recent = entries.slice(-6).reverse();
+    $('activity-feed').innerHTML = recent.map(function(b){
+      var who = (avatarById[b.playerId] || '') + ' ' + escapeHtml(b.name);
+      if (b.fold){
+        return '<div class="activity-row is-fold"><span>' + who + ' <span class="num">folded</span></span></div>';
+      }
+      if (b.boot){
+        return '<div class="activity-row"><span>' + who + ' paid <span class="num">' + money.format(b.amount) + '</span> boot</span></div>';
+      }
+      var tag = b.seen ? ' (seen)' : '';
+      return '<div class="activity-row"><span>' + who + ' bet <span class="num">' + money.format(b.amount) + '</span>' + tag + '</span></div>';
+    }).join('');
   }
 
   function renderRoster(){
@@ -1689,14 +1734,31 @@
     var g = state.game;
 
     if (!g.roundStarted){
+      var roster = state.players;
+      if (!state.starterId || !roster.some(function(p){ return p.id === state.starterId; })){
+        state.starterId = roster.length ? roster[0].id : null;
+      }
+      var starterPicks = roster.map(function(p){
+        var sel = p.id === state.starterId;
+        return '<button type="button" class="winner-pick' + (sel ? ' selected' : '') + '" data-starter="' + p.id + '">' + (p.avatar||'') + ' ' + escapeHtml(p.name) + '</button>';
+      }).join('');
+
       wrap.innerHTML =
         '<div class="dealer-panel">' +
           '<div class="dealer-title">Dealer</div>' +
           '<p class="boot-note">' + (g.bootAmount ? 'Starting the round collects ' + money.format(g.bootAmount) + ' boot from each player.' : 'No boot configured for this table.') + '</p>' +
           '<label class="deal-check"><input type="checkbox" id="deal-cards-check"' + (dealCardsPref ? ' checked' : '') + '> Deal 3 virtual cards to each player</label>' +
+          '<div class="dealer-title" style="margin-top:14px;">Who starts this round?</div>' +
+          '<div class="winner-picks">' + (starterPicks || '<span class="empty-row">No players yet.</span>') + '</div>' +
           '<button class="btn btn-gold" id="btn-start-round" type="button">Start round</button>' +
         '</div>';
       $('deal-cards-check').onchange = function(){ dealCardsPref = $('deal-cards-check').checked; };
+      wrap.querySelectorAll('[data-starter]').forEach(function(btn){
+        btn.onclick = function(){
+          state.starterId = btn.getAttribute('data-starter');
+          renderDealerPanel();
+        };
+      });
       $('btn-start-round').onclick = onStartRound;
       return;
     }
@@ -1791,6 +1853,12 @@
     if (!amount || amount <= 0){ $('bet-error').textContent = 'Enter an amount to bet.'; return; }
     if (amount > m.chips){ $('bet-error').textContent = "That's more chips than you have."; return; }
 
+    var required = m.seen ? g.stake*2 : g.stake;
+    if (required && amount < required && amount < m.chips){
+      $('bet-error').textContent = 'The bet is ' + money.format(required) + ' — match it, raise it, or go all-in with ' + money.format(m.chips) + '.';
+      return;
+    }
+
     $('btn-bet').disabled = true;
     var betBtn = $('btn-bet');
     var potEl = document.querySelector('.pot-hero');
@@ -1799,7 +1867,7 @@
 
     Promise.all([
       gameRef.collection('players').doc(m.id).update({ chips: m.chips - amount }),
-      gameRef.collection('bets').add({ playerId: m.id, name: m.name, amount: amount, round: g.round, ts: Date.now() }),
+      gameRef.collection('bets').add({ playerId: m.id, name: m.name, amount: amount, round: g.round, ts: Date.now(), seen: !!m.seen }),
       gameRef.update({ turnPlayerId: nextTurn, stake: newStake })
     ]).then(function(){
       flyCoins(betBtn, potEl, amount, {unit: g.stake});
@@ -1820,6 +1888,7 @@
     var nextTurn = nextTurnPlayerId(m.id);
     Promise.all([
       gameRef.collection('players').doc(m.id).update({ folded: true }),
+      gameRef.collection('bets').add({ playerId: m.id, name: m.name, amount: 0, round: g.round, ts: Date.now(), fold: true }),
       gameRef.update({ turnPlayerId: nextTurn })
     ]).then(function(){ sfxFold(); }).catch(function(){
       toast('Could not fold — try again.');
@@ -1855,7 +1924,10 @@
       if (dealCards) hands[p.id] = [deck.pop(), deck.pop(), deck.pop()];
     });
 
-    var firstTurn = players.length ? players[0].id : null;
+    var firstTurn = state.starterId && players.some(function(p){ return p.id === state.starterId; })
+      ? state.starterId
+      : (players.length ? players[0].id : null);
+    state.starterId = null;
 
     Promise.all(updates).then(function(){
       return gameRef.update({ roundStarted: true, turnPlayerId: firstTurn, hands: hands, stake: g.bootAmount>0 ? g.bootAmount : g.stake });
