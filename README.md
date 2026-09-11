@@ -103,15 +103,24 @@ you share with friends.
 - Share the link (it carries your room code) or tap the 📱 icon for a QR
   code your friends can scan — they tap **Join a table**, enter their name
   and avatar, and (if you set one) the PIN.
-- **Start round** (host only) collects the boot from every player and,
-  if you tick the box, deals 3 hidden cards to each player. Players can tap
-  **View my cards** to reveal their own hand and see its rank (Trail, Pure
-  Sequence, Sequence, Color, Pair, or High Card) — nobody else sees your
-  cards, just a face-down back and a Blind/Seen badge.
+- **Start round** (host only) picks who acts first, collects the boot from
+  every player, and, if you tick the box, deals 3 hidden cards to each
+  player. Players can tap **View my cards** to reveal their own hand and see
+  its rank (Trail, Pure Sequence, Sequence, Color, Pair, or High Card) —
+  nobody else sees your cards, just a face-down back and a Blind/Seen badge.
 - Betting is turn-based — only the highlighted player can bet or fold, and
-  the turn passes automatically afterward. Blind bets match the current
-  stake; betting after viewing your cards ("Seen") suggests double — both are
-  just suggested quick-bet amounts, you can still type any amount.
+  the turn passes automatically afterward. Once someone bets, the next
+  player must match or beat it (double it if they've gone "Seen"), unless
+  they go all-in with less. The **Latest action** feed above the player list
+  shows everyone's bets, boots, and folds as they happen.
+- With exactly two players left in a round, either one can tap **Show cards
+  to everyone** for a showdown reveal instead of just folding blind — the
+  best hand shown this way is tracked as "🏆 Best hand tonight" for the
+  table.
+- Host-only **Fold for them** appears next to whoever's turn it is (besides
+  the host) — handy when someone's stepped away from their phone.
+- Tap an emoji under any player's name to send them a quick reaction —
+  everyone at the table sees it pop over their avatar for a couple seconds.
 - The host picks the winner and taps **Award pot**; chips, the leaderboard,
   and round history update for everyone instantly. **Void round** refunds a
   misdealt round instead.
@@ -120,6 +129,11 @@ you share with friends.
 - **End table for everyone** (host only) archives the table to Past Games
   (visible next time that device opens the app) and permanently removes the
   live table from Firestore.
+- **Your tables** on the home screen lists every table you're currently
+  part of on that device (hosted or joined) so you can jump straight back
+  into one without re-entering a code, name, or PIN — handy if you're
+  running more than one table off the same link. Tap the ✕ to forget one
+  without affecting the live table.
 - The 🔊/🌙 icons in the header toggle sound/haptics and light/dark theme —
   both remembered on that device. A lifetime stats line ("🏆 Lifetime: N
   games...") appears on the home screen once you've played at least one game

@@ -296,6 +296,24 @@
   .past-game-row:hover{border-color:var(--gold);}
   .past-game-row .pg-date{color:var(--ink-faint); font-size:.72rem;}
 
+  .active-table-row{
+    display:flex; align-items:center; gap:8px;
+    background:var(--felt-800); border:1px solid var(--line); border-radius:12px;
+    padding:6px 6px 6px 14px;
+  }
+  .active-table-row:hover{border-color:var(--gold);}
+  .active-table-main{
+    flex:1; display:flex; justify-content:space-between; align-items:center;
+    background:none; border:none; cursor:pointer; text-align:left;
+    color:var(--ink); font-size:.85rem; padding:6px 0;
+  }
+  .active-table-main .pg-date{color:var(--ink-faint); font-size:.72rem;}
+  .active-table-remove{
+    background:none; border:none; color:var(--ink-faint);
+    font-size:.9rem; cursor:pointer; padding:8px;
+  }
+  .active-table-remove:hover{color:var(--wine-strong);}
+
   /* ---------- table screen ---------- */
 
   .table-header{
@@ -367,6 +385,7 @@
   }
   .pot-amount .suit-sep{color:var(--wine-strong); font-size:1.4rem; margin:0 2px;}
   .stake-tag{font-size:.72rem; color:var(--ink-faint); margin-top:4px;}
+  .best-hand-tag{font-size:.78rem; color:var(--gold-strong); font-weight:700; text-align:center; margin-top:10px;}
 
   .section-title{
     display:flex;
@@ -389,6 +408,7 @@
   }
   .player-row.is-folded{opacity:.5;}
   .player-row.is-turn{border-color:var(--gold); background:linear-gradient(90deg, rgba(216,173,63,.1), transparent 60%), var(--felt-800);}
+  .avatar-wrap{position:relative; flex-shrink:0;}
   .avatar{
     width:38px; height:38px; border-radius:50%;
     background:var(--felt-700);
@@ -399,6 +419,27 @@
     font-family:'Fraunces',serif;
     font-size:1.1rem;
   }
+  .reaction-bubble{
+    position:absolute;
+    top:-14px; left:50%;
+    transform:translateX(-50%);
+    font-size:1.15rem;
+    animation:reaction-pop 2.4s ease-out forwards;
+    pointer-events:none;
+  }
+  @keyframes reaction-pop{
+    0%{ transform:translateX(-50%) translateY(6px) scale(.4); opacity:0; }
+    18%{ transform:translateX(-50%) translateY(-4px) scale(1.15); opacity:1; }
+    35%{ transform:translateX(-50%) translateY(-6px) scale(1); opacity:1; }
+    100%{ transform:translateX(-50%) translateY(-16px) scale(1); opacity:0; }
+  }
+  .reaction-bar{display:flex; gap:4px; margin-top:4px;}
+  .reaction-btn{
+    background:none; border:none; padding:1px 2px;
+    font-size:.9rem; line-height:1; cursor:pointer;
+    opacity:.6; border-radius:6px;
+  }
+  .reaction-btn:hover{opacity:1; background:var(--felt-700);}
   .player-meta{flex:1; min-width:0;}
   .player-name{
     display:flex; align-items:center; gap:6px; flex-wrap:wrap;
@@ -723,6 +764,11 @@
       <p class="stats-line" id="stats-line" hidden></p>
     </div>
 
+    <div id="active-tables-wrap" hidden>
+      <div class="section-title"><h2>Your tables</h2></div>
+      <div class="past-games-list" id="active-tables-list"></div>
+    </div>
+
     <div class="tabs">
       <button id="tab-host" class="active" type="button">Host a table</button>
       <button id="tab-join" type="button">Join a table</button>
@@ -817,6 +863,7 @@
         <div class="pot-amount"><span class="suit-sep">&#9830;</span><span class="num" id="tbl-pot">0</span><span class="suit-sep">&#9827;</span></div>
         <div class="stake-tag" id="tbl-stake"></div>
       </div>
+      <div class="best-hand-tag" id="tbl-besthand" hidden></div>
     </div>
 
     <p class="turn-status" id="turn-status"></p>
@@ -985,6 +1032,24 @@
       list.unshift(entry);
       if (list.length > 20) list = list.slice(0,20);
       localStorage.setItem('tp_past_games', JSON.stringify(list));
+    } catch(e){}
+  }
+
+  function loadActiveTables(){
+    try { var raw = localStorage.getItem('tp_active_tables'); return raw ? JSON.parse(raw) : []; } catch(e){ return []; }
+  }
+  function upsertActiveTable(entry){
+    try {
+      var list = loadActiveTables().filter(function(t){ return t.code !== entry.code; });
+      list.unshift(entry);
+      if (list.length > 10) list = list.slice(0,10);
+      localStorage.setItem('tp_active_tables', JSON.stringify(list));
+    } catch(e){}
+  }
+  function removeActiveTable(code){
+    try {
+      var list = loadActiveTables().filter(function(t){ return t.code !== code; });
+      localStorage.setItem('tp_active_tables', JSON.stringify(list));
     } catch(e){}
   }
 
@@ -1208,6 +1273,7 @@
       $('btn-join').disabled = false;
       renderPastGames();
       renderStatsLine();
+      renderActiveTables();
     }
   }
 
@@ -1297,6 +1363,43 @@
         (d.biggestWin ? ' &middot; best round +' + money.format(d.biggestWin) : '');
       show('stats-line');
     }).catch(function(){});
+  }
+
+  function renderActiveTables(){
+    var list = loadActiveTables();
+    if (!list.length){ hide('active-tables-wrap'); return; }
+    show('active-tables-wrap');
+    $('active-tables-list').innerHTML = list.map(function(t){
+      return '<div class="active-table-row">' +
+        '<button type="button" class="active-table-main" data-rejoin="' + t.code + '"><span>' + escapeHtml(t.name) + '</span><span class="pg-date">Code ' + t.code + '</span></button>' +
+        '<button type="button" class="active-table-remove" data-remove="' + t.code + '" title="Remove from this list">&#10005;</button>' +
+      '</div>';
+    }).join('');
+    $('active-tables-list').querySelectorAll('[data-rejoin]').forEach(function(btn){
+      btn.addEventListener('click', function(){ onRejoinActiveTable(btn.getAttribute('data-rejoin')); });
+    });
+    $('active-tables-list').querySelectorAll('[data-remove]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        removeActiveTable(btn.getAttribute('data-remove'));
+        renderActiveTables();
+      });
+    });
+  }
+
+  function onRejoinActiveTable(code){
+    var entry = loadActiveTables().find(function(t){ return t.code === code; });
+    if (!entry) return;
+    db.doc('games/'+code).get().then(function(snap){
+      if (!snap.exists){
+        toast("That table doesn't exist anymore.");
+        removeActiveTable(code);
+        renderActiveTables();
+        return;
+      }
+      saveSession(code, entry.playerId);
+      safeReplaceState(location.pathname + '?room=' + code);
+      enterTable(code, entry.playerId);
+    }).catch(function(){ toast('Could not open that table — try again.'); });
   }
 
   function renderPastGames(){
@@ -1389,10 +1492,10 @@
         return db.doc('games/'+code).set({
           name: name, buyIn: buyIn, hostId: playerId, round: 1, createdAt: Date.now(),
           bootAmount: boot, pin: pin, stake: boot > 0 ? boot : niceRound(buyIn*0.01),
-          roundStarted: false, turnPlayerId: null, hands: {}
+          roundStarted: false, turnPlayerId: null, hands: {}, reactions: {}, bestHand: null
         }).then(function(){
           return db.doc('games/'+code+'/players/'+playerId).set({
-            name: hostName, chips: buyIn, folded: false, joinedAt: Date.now(), avatar: avatar, seen: false
+            name: hostName, chips: buyIn, folded: false, joinedAt: Date.now(), avatar: avatar, seen: false, revealedToAll: false
           });
         }).then(function(){
           saveSession(code, playerId);
@@ -1418,7 +1521,7 @@
         }
         var playerId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random());
         return db.doc('games/'+code+'/players/'+playerId).set({
-          name: name, chips: data.buyIn, folded: false, joinedAt: Date.now(), avatar: avatar, seen: false
+          name: name, chips: data.buyIn, folded: false, joinedAt: Date.now(), avatar: avatar, seen: false, revealedToAll: false
         }).then(function(){
           saveSession(code, playerId);
           safeReplaceState(location.pathname + '?room=' + code);
@@ -1430,9 +1533,15 @@
 
   // ---------- table screen ----------
 
+  var reactionTickTimer = null;
+
   function enterTable(code, playerId){
     unsubs.forEach(function(u){ u(); });
     unsubs = [];
+    clearInterval(reactionTickTimer);
+    reactionTickTimer = setInterval(function(){
+      if (recentReactionsExist()) renderRoster();
+    }, 700);
 
     state.roomCode = code;
     state.myPlayerId = playerId;
@@ -1453,6 +1562,7 @@
         return;
       }
       state.game = snap.data();
+      upsertActiveTable({ code: code, name: state.game.name, playerId: playerId, lastActive: Date.now() });
       renderDynamic();
     }, function(){ }));
 
@@ -1480,6 +1590,8 @@
     toast('This table was ended.');
     unsubs.forEach(function(u){ u(); });
     unsubs = [];
+    clearInterval(reactionTickTimer);
+    removeActiveTable(code);
     if (finalChips != null && buyIn != null) recordProfileStat(finalChips, buyIn);
     db.doc('completed_games/'+code).get().then(function(snap){
       if (snap.exists){
@@ -1599,6 +1711,13 @@
 
     $('tbl-stake').textContent = g.roundStarted ? ('Stake ' + money.format(g.stake||0) + (g.bootAmount ? ' · Boot ' + money.format(g.bootAmount) : '')) : (g.bootAmount ? 'Boot ' + money.format(g.bootAmount) + ' per round' : 'No boot set');
 
+    if (g.bestHand){
+      $('tbl-besthand').textContent = '🏆 Best hand tonight: ' + g.bestHand.label + ' — ' + g.bestHand.avatar + ' ' + g.bestHand.name;
+      show('tbl-besthand');
+    } else {
+      hide('tbl-besthand');
+    }
+
     $('btn-end').hidden = !isHost();
 
     renderTurnStatus();
@@ -1649,9 +1768,22 @@
     }).join('');
   }
 
+  var REACTIONS = ['😄','🔥','😭','👏','😱'];
+
+  function recentReactionsExist(){
+    var r = state.game && state.game.reactions;
+    if (!r) return false;
+    var now = Date.now();
+    return Object.keys(r).some(function(pid){ return now - (r[pid].ts||0) < 2400; });
+  }
+
   function renderRoster(){
     var host = state.game.hostId;
     var hands = state.game.hands || {};
+    var activeCount = activePlayers().length;
+    var reactions = state.game.reactions || {};
+    var now = Date.now();
+
     var html = state.players.map(function(p){
       var badges = '';
       if (p.id === host) badges += '<span class="badge badge-host">Host</span>';
@@ -1665,29 +1797,47 @@
         ? '<button class="rebuy-link" data-rebuy="1" type="button">Rebuy +' + money.format(state.game.buyIn) + '</button>'
         : '';
 
+      var hostFold = (isHost() && p.id !== state.myPlayerId && state.game.roundStarted && state.game.turnPlayerId === p.id && !p.folded)
+        ? '<button class="rebuy-link" data-hostfold="' + p.id + '" type="button">Fold for them (AFK)</button>'
+        : '';
+
       var handHtml = '';
       var hand = hands[p.id];
       if (hand && hand.length === 3){
-        if (p.id === state.myPlayerId){
-          if (state.revealed){
-            var rank = rankHand(hand);
-            handHtml = '<div class="hand-row">' + hand.map(function(c){
-              return '<div class="card-mini ' + cardColor(c) + '">' + c.r + c.s + '</div>';
-            }).join('') + '<span class="hand-rank-label">' + rank.label + '</span></div>';
-          } else {
-            handHtml = '<div class="hand-row"><button type="button" class="reveal-link" data-reveal="1">View my cards</button></div>';
+        if (p.revealedToAll || (p.id === state.myPlayerId && state.revealed)){
+          var rank = rankHand(hand);
+          handHtml = '<div class="hand-row">' + hand.map(function(c){
+            return '<div class="card-mini ' + cardColor(c) + '">' + c.r + c.s + '</div>';
+          }).join('') + '<span class="hand-rank-label">' + rank.label + '</span></div>';
+          if (p.id === state.myPlayerId && !p.revealedToAll && !p.folded && activeCount === 2){
+            handHtml += '<div class="hand-row"><button type="button" class="reveal-link" data-showdown="1">Show cards to everyone</button></div>';
           }
+        } else if (p.id === state.myPlayerId){
+          handHtml = '<div class="hand-row"><button type="button" class="reveal-link" data-reveal="1">View my cards</button></div>';
         } else {
           handHtml = '<div class="hand-row">' + [0,1,2].map(function(){ return '<div class="card-mini back">&#127183;</div>'; }).join('') + '</div>';
         }
       }
 
+      var reactBar = '<div class="reaction-bar">' + REACTIONS.map(function(e){
+        return '<button type="button" class="reaction-btn" data-react="' + p.id + '" data-emoji="' + e + '">' + e + '</button>';
+      }).join('') + '</div>';
+
+      var bubble = '';
+      var rx = reactions[p.id];
+      if (rx && (now - (rx.ts||0)) < 2400){
+        bubble = '<div class="reaction-bubble">' + rx.emoji + '</div>';
+      }
+
       return (
         '<div class="player-row' + (p.folded ? ' is-folded' : '') + (state.game.roundStarted && state.game.turnPlayerId===p.id && !p.folded ? ' is-turn' : '') + '">' +
-          '<div class="avatar">' + (p.avatar ? p.avatar : escapeHtml(initials(p.name))) + '</div>' +
+          '<div class="avatar-wrap">' +
+            '<div class="avatar">' + (p.avatar ? p.avatar : escapeHtml(initials(p.name))) + '</div>' +
+            bubble +
+          '</div>' +
           '<div class="player-meta">' +
             '<div class="player-name">' + escapeHtml(p.name) + badges + '</div>' +
-            rebuy + handHtml +
+            rebuy + hostFold + handHtml + reactBar +
           '</div>' +
           '<div class="player-chips num" id="chip-target-' + p.id + '">' + money.format(p.chips) + '</div>' +
         '</div>'
@@ -1715,6 +1865,58 @@
       if (m && !m.seen) gameRef.collection('players').doc(m.id).update({ seen: true }).catch(function(){});
       renderRoster();
     };
+    var showdownBtn = $('roster').querySelector('[data-showdown]');
+    if (showdownBtn) showdownBtn.onclick = onShowdownReveal;
+    $('roster').querySelectorAll('[data-hostfold]').forEach(function(btn){
+      btn.onclick = function(){ onHostFoldFor(btn.getAttribute('data-hostfold')); };
+    });
+    $('roster').querySelectorAll('[data-react]').forEach(function(btn){
+      btn.onclick = function(){ onSendReaction(btn.getAttribute('data-react'), btn.getAttribute('data-emoji')); };
+    });
+  }
+
+  function onShowdownReveal(){
+    var m = me();
+    if (!m) return;
+    var hands = state.game.hands || {};
+    var hand = hands[m.id];
+    gameRef.collection('players').doc(m.id).update({ revealedToAll: true, seen: true }).catch(function(){});
+    if (hand && hand.length === 3) maybeUpdateBestHand(hand, m);
+    state.revealed = true;
+  }
+
+  function maybeUpdateBestHand(hand, player){
+    var rank = rankHand(hand);
+    var current = state.game.bestHand;
+    if (!current || rank.category < current.category){
+      gameRef.update({ bestHand: {
+        playerId: player.id, name: player.name, avatar: player.avatar || '',
+        label: rank.label, category: rank.category, round: state.game.round
+      } }).catch(function(){});
+    }
+  }
+
+  function onHostFoldFor(playerId){
+    var g = state.game;
+    if (!isHost() || g.turnPlayerId !== playerId) return;
+    var target = state.players.find(function(p){ return p.id === playerId; });
+    if (!target) return;
+    var nextTurn = nextTurnPlayerId(playerId);
+    Promise.all([
+      gameRef.collection('players').doc(playerId).update({ folded: true }),
+      gameRef.collection('bets').add({ playerId: playerId, name: target.name, amount: 0, round: g.round, ts: Date.now(), fold: true }),
+      gameRef.update({ turnPlayerId: nextTurn })
+    ]).then(function(){
+      toast('Folded for ' + target.name + '.');
+    }).catch(function(){
+      toast('Could not fold for them — try again.');
+    });
+  }
+
+  function onSendReaction(playerId, emoji){
+    var reactions = Object.assign({}, state.game.reactions || {});
+    reactions[playerId] = { emoji: emoji, ts: Date.now() };
+    gameRef.update({ reactions: reactions }).catch(function(){});
   }
 
   function renderLeaderboard(){
@@ -1917,7 +2119,7 @@
     players.forEach(function(p){
       var bootAmt = Math.min(g.bootAmount||0, p.chips);
       var newChips = p.chips - bootAmt;
-      updates.push(gameRef.collection('players').doc(p.id).update({ chips: newChips, folded: false, seen: false }));
+      updates.push(gameRef.collection('players').doc(p.id).update({ chips: newChips, folded: false, seen: false, revealedToAll: false }));
       if (bootAmt > 0){
         updates.push(gameRef.collection('bets').add({ playerId: p.id, name: p.name, amount: bootAmt, round: g.round, ts: Date.now(), boot:true }));
       }
@@ -1961,7 +2163,7 @@
         gameRef.collection('rounds').add({ round: round, winnerId: winner.id, winnerName: winner.name, amount: pot, ts: Date.now() })
       ]).then(function(){
         return Promise.all(state.players.map(function(p){
-          return gameRef.collection('players').doc(p.id).update({ folded: false, seen: false });
+          return gameRef.collection('players').doc(p.id).update({ folded: false, seen: false, revealedToAll: false });
         }));
       }).then(function(){
         return gameRef.update({ round: round + 1, roundStarted: false, turnPlayerId: null, hands: {}, stake: state.game.bootAmount || 0 });
@@ -2003,7 +2205,7 @@
         return gameRef.collection('players').doc(pid).update({ chips: p.chips + refunds[pid] });
       })).then(function(){
         return Promise.all(state.players.map(function(p){
-          return gameRef.collection('players').doc(p.id).update({ folded: false, seen: false });
+          return gameRef.collection('players').doc(p.id).update({ folded: false, seen: false, revealedToAll: false });
         }));
       }).then(function(){
         return gameRef.update({ round: round + 1, roundStarted: false, turnPlayerId: null, hands: {}, stake: state.game.bootAmount || 0 });
@@ -2051,6 +2253,7 @@
       if (m && state.game) recordProfileStat(m.chips, state.game.buyIn);
       unsubs.forEach(function(u){ u(); });
       unsubs = [];
+      clearInterval(reactionTickTimer);
       clearSession();
       safeReplaceState(location.pathname);
       goto('screen-home');
@@ -2089,9 +2292,11 @@
         return ref.delete();
       }).then(function(){
         addPastGame({code: code, name: summary.name, endedAt: summary.endedAt});
+        removeActiveTable(code);
         if (myFinalChips != null) recordProfileStat(myFinalChips, myBuyIn);
         unsubs.forEach(function(u){ u(); });
         unsubs = [];
+        clearInterval(reactionTickTimer);
         clearSession();
         safeReplaceState(location.pathname);
         goto('screen-home');
